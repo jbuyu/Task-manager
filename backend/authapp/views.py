@@ -2,6 +2,7 @@ from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from .serializers import UserAuthSerializer
 
 
 @api_view(['GET'])
@@ -9,7 +10,7 @@ from rest_framework.response import Response
 def me(request):
     """
     Get current authenticated user.
-    Returns 401 if not authenticated (placeholder implementation).
+    Returns 401 if not authenticated, otherwise returns user data.
     """
     if not request.user.is_authenticated:
         return Response(
@@ -17,5 +18,5 @@ def me(request):
             status=status.HTTP_401_UNAUTHORIZED
         )
     
-    # TODO: Return user data when authenticated
-    return Response({'user': None}, status=status.HTTP_200_OK)
+    serializer = UserAuthSerializer(request.user)
+    return Response({'user': serializer.data}, status=status.HTTP_200_OK)
