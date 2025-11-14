@@ -1,6 +1,8 @@
-import { createRouter, createRootRoute, createRoute } from '@tanstack/react-router';
+import { createRouter, createRootRoute, createRoute, redirect } from '@tanstack/react-router';
 import { QueryClient } from '@tanstack/react-query';
 import { authMe } from './api/auth';
+import { LoginPage } from './pages/LoginPage';
+import { Dashboard } from './pages/Dashboard';
 
 // Root route with loader that fetches auth status
 const rootRoute = createRootRoute({
@@ -18,20 +20,47 @@ const rootRoute = createRootRoute({
   },
 });
 
-// Index route (will be replaced with dashboard/login later)
+// Index route - redirect to dashboard if authenticated, login if not
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  component: () => (
-    <div style={{ padding: '20px' }}>
-      <h1>Team Task Management</h1>
-      <p>Loading...</p>
-    </div>
-  ),
+  beforeLoad: ({ context, location }) => {
+    const authData = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
+    if (authData?.user) {
+      throw redirect({ to: '/dashboard', search: location.search });
+    }
+    throw redirect({ to: '/login', search: location.search });
+  },
+});
+
+// Login route - redirect to dashboard if already authenticated
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  component: LoginPage,
+  beforeLoad: ({ context, location }) => {
+    const authData = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
+    if (authData?.user) {
+      throw redirect({ to: '/dashboard', search: location.search });
+    }
+  },
+});
+
+// Dashboard route - require authentication
+const dashboardRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/dashboard',
+  component: Dashboard,
+  beforeLoad: ({ context, location }) => {
+    const authData = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
+    if (!authData?.user) {
+      throw redirect({ to: '/login', search: { redirect: location.href } });
+    }
+  },
 });
 
 // Create route tree
-const routeTree = rootRoute.addChildren([indexRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute]);
 
 // Create router
 export const router = createRouter({
@@ -40,4 +69,3 @@ export const router = createRouter({
     queryClient: undefined! as QueryClient,
   },
 });
-
