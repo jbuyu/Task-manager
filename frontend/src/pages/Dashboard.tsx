@@ -1,81 +1,129 @@
-import { useNavigate } from '@tanstack/react-router';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { logout, authMe } from '../api/auth';
+import { useQuery } from '@tanstack/react-query';
+import { authMe } from '../api/auth';
+import { Header } from '../components/Header';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function Dashboard() {
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  // Get current user
   const { data: authData, isLoading } = useQuery({
     queryKey: ['auth', 'me'],
     queryFn: authMe,
   });
 
-  const logoutMutation = useMutation({
-    mutationFn: logout,
-    onSuccess: () => {
-      // Clear auth cache
-      queryClient.setQueryData(['auth', 'me'], { user: null });
-      // Redirect to login
-      navigate({ to: '/login' });
-    },
-  });
-
-  const handleLogout = () => {
-    logoutMutation.mutate();
-  };
-
   if (isLoading) {
-    return <div style={{ padding: '20px' }}>Loading...</div>;
+    return (
+      <div className="min-h-screen">
+        <Header />
+        <div className="container mx-auto p-8">
+          <div className="flex items-center justify-center min-h-[400px]">
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const user = authData?.user;
 
-  return (
-    <div style={{ padding: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem' }}>
-        <h1>Team Task Management</h1>
-        <div>
-          <span style={{ marginRight: '1rem' }}>
-            Welcome, <strong>{user?.username}</strong> ({user?.role})
-          </span>
-          <button
-            onClick={handleLogout}
-            disabled={logoutMutation.isPending}
-            style={{
-              padding: '0.5rem 1rem',
-              backgroundColor: '#dc3545',
-              color: 'white',
-              border: 'none',
-              borderRadius: '4px',
-              cursor: logoutMutation.isPending ? 'not-allowed' : 'pointer',
-              opacity: logoutMutation.isPending ? 0.6 : 1
-            }}
-          >
-            {logoutMutation.isPending ? 'Logging out...' : 'Logout'}
-          </button>
-        </div>
-      </div>
+  if (!user) {
+    return null;
+  }
 
-      <div>
-        <h2>Dashboard</h2>
-        <p>Welcome to the Team Task Management Dashboard</p>
-        <p>This is a placeholder. Full dashboard will be implemented in next iterations.</p>
-        
-        {user && (
-          <div style={{ marginTop: '2rem', padding: '1rem', backgroundColor: '#f8f9fa', borderRadius: '4px' }}>
-            <h3>User Information</h3>
-            <ul style={{ listStyle: 'none', padding: 0 }}>
-              <li><strong>Username:</strong> {user.username}</li>
-              <li><strong>Email:</strong> {user.email || 'Not provided'}</li>
-              <li><strong>Role:</strong> {user.role}</li>
-              <li><strong>Active:</strong> {user.is_active ? 'Yes' : 'No'}</li>
-            </ul>
+  const roleBadgeColor = {
+    Admin: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+    Manager: 'bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300',
+    Member: 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300',
+  }[user.role] || 'bg-gray-100 text-gray-700';
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <main className="container mx-auto p-8">
+        <div className="space-y-6">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+            <p className="text-muted-foreground">
+              Welcome back, {user.username}! Here's an overview of your tasks.
+            </p>
           </div>
-        )}
-      </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>User Information</CardTitle>
+                <CardDescription>Your account details</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Username</p>
+                  <p className="text-base font-semibold">{user.username}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Email</p>
+                  <p className="text-base">{user.email || 'Not provided'}</p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Role</p>
+                  <span className={`inline-block px-2.5 py-1 text-xs font-semibold rounded-full ${roleBadgeColor}`}>
+                    {user.role}
+                  </span>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Status</p>
+                  <p className="text-base">
+                    <span className={`inline-block px-2.5 py-1 text-xs font-semibold rounded-full ${
+                      user.is_active 
+                        ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
+                        : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                    }`}>
+                      {user.is_active ? 'Active' : 'Inactive'}
+                    </span>
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Quick Stats</CardTitle>
+                <CardDescription>Task overview</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm">
+                  Task statistics will appear here once tasks are implemented.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Activity</CardTitle>
+                <CardDescription>Your latest actions</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm">
+                  Recent activity will appear here once tasks are implemented.
+                </p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Getting Started</CardTitle>
+              <CardDescription>What you can do next</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="list-disc list-inside space-y-2 text-sm text-muted-foreground">
+                <li>View and manage your assigned tasks</li>
+                <li>Create new tasks (Manager and Admin only)</li>
+                <li>Update task status and deadlines</li>
+                <li>Filter tasks by status or assignee</li>
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      </main>
     </div>
   );
 }
-
