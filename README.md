@@ -15,7 +15,7 @@ See [`team-task-management-spec.md`](./team-task-management-spec.md) for the com
 
 ### Prerequisites
 
-- **Python 3.10+** (required for Django 5; Python 3.9 uses Django 4.2)
+- **Python 3.10+** (required for Django 5)
 - **Node.js 18+**
 - **PostgreSQL** (optional; SQLite used for local dev if DB env vars not set)
 
