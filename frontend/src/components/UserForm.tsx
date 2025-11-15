@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { User } from '../api/types';
-import { UserCreateRequest, UserUpdateRequest } from '../api/users';
+import type { User } from '../api/types';
+import type { UserCreateRequest, UserUpdateRequest } from '../api/users';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
