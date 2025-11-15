@@ -1,7 +1,8 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Header } from '../components/Header';
-import { getTasks, createTask, updateTask, deleteTask, Task, TaskCreateRequest } from '../api/tasks';
+import { getTasks, createTask, updateTask, deleteTask } from '../api/tasks';
+import type { Task, TaskCreateRequest } from '../api/types';
 import { authMe } from '../api/auth';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';

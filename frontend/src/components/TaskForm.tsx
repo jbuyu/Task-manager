@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Task, TaskCreateRequest, TaskUpdateRequest } from '../api/tasks';
+import type { Task, TaskCreateRequest, TaskUpdateRequest } from '../api/types';
 import { getUsers } from '../api/users';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
