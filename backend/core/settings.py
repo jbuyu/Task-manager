@@ -168,12 +168,15 @@ CORS_ALLOWED_ORIGINS = [
 ]
 
 CORS_ALLOW_CREDENTIALS = True  # Required for session cookies
+CORS_EXPOSE_HEADERS = ['Set-Cookie']  # Expose Set-Cookie header to frontend
 
 # Session configuration
 # Security: session cookies should be HttpOnly and Secure in production
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
-SESSION_COOKIE_SAMESITE = 'Lax'  # Prevents CSRF while allowing same-site requests
+# SameSite=None is required for cross-origin cookies (localhost:5173 -> localhost:8000)
+# Modern browsers allow SameSite=None with Secure=False for localhost
+SESSION_COOKIE_SAMESITE = 'None'  # Required for cross-origin cookies
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request to extend expiry
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after browser closes
@@ -181,4 +184,5 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after browser closes
 # CSRF configuration
 CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read CSRF token
 CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
+CSRF_COOKIE_SAMESITE = 'None'  # Match session cookie SameSite for cross-origin
 CSRF_TRUSTED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
