@@ -1,5 +1,5 @@
 import { apiClient } from './client';
-import { User } from './auth';
+import type { User } from './types';
 
 /**
  * Get list of users (Admin only)
