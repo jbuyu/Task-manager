@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 // Get API URL from environment or default to local development
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000/api';
+// In dev, use relative path to leverage Vite proxy (same origin = cookies work)
+// In production, use full URL
+const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:8000/api');
 
 // Create axios instance with credentials to send cookies
 export const apiClient = axios.create({

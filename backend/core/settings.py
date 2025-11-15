@@ -174,9 +174,9 @@ CORS_EXPOSE_HEADERS = ['Set-Cookie']  # Expose Set-Cookie header to frontend
 # Security: session cookies should be HttpOnly and Secure in production
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
-# SameSite=None is required for cross-origin cookies (localhost:5173 -> localhost:8000)
-# Modern browsers allow SameSite=None with Secure=False for localhost
-SESSION_COOKIE_SAMESITE = 'None'  # Required for cross-origin cookies
+# Using Vite proxy, so frontend and backend appear on same origin
+# This allows SameSite='Lax' to work properly
+SESSION_COOKIE_SAMESITE = 'Lax'  # Works with Vite proxy (same origin)
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request to extend expiry
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after browser closes
@@ -184,5 +184,5 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after browser closes
 # CSRF configuration
 CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read CSRF token
 CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
-CSRF_COOKIE_SAMESITE = 'None'  # Match session cookie SameSite for cross-origin
+CSRF_COOKIE_SAMESITE = 'Lax'  # Match session cookie SameSite
 CSRF_TRUSTED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']

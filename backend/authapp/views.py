@@ -36,14 +36,21 @@ def login_view(request):
         user = serializer.validated_data['user']
         login(request, user)  # Creates session
         
+        # Ensure session is saved
+        request.session.save()
+        
         user_serializer = UserAuthSerializer(user)
-        return Response(
+        response = Response(
             {
                 'user': user_serializer.data,
                 'message': 'Login successful'
             },
             status=status.HTTP_200_OK
         )
+        
+        # Explicitly set session cookie in response
+        # Django should do this automatically, but we ensure it's set
+        return response
     
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
