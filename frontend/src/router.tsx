@@ -3,6 +3,7 @@ import { QueryClient } from '@tanstack/react-query';
 import { authMe } from './api/auth';
 import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
+import { TasksPage } from './pages/TasksPage';
 
 // Root route with loader that fetches auth status
 const rootRoute = createRootRoute({
@@ -59,8 +60,21 @@ const dashboardRoute = createRoute({
   },
 });
 
+// Tasks route - require authentication
+const tasksRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tasks',
+  component: TasksPage,
+  beforeLoad: ({ context, location }) => {
+    const authData = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
+    if (!authData?.user) {
+      throw redirect({ to: '/login', search: { redirect: location.href } });
+    }
+  },
+});
+
 // Create route tree
-const routeTree = rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, tasksRoute]);
 
 // Create router
 export const router = createRouter({
