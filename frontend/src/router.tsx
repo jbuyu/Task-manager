@@ -9,9 +9,6 @@ import { UsersPage } from './pages/UsersPage';
 // Root route with loader that fetches auth status
 const rootRoute = createRootRoute({
   loader: async ({ context }) => {
-    // Check if we have cached auth data first
-    const cachedAuth = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
-    
     // Fetch current user on root load
     try {
       const data = await authMe();
@@ -20,14 +17,20 @@ const rootRoute = createRootRoute({
     } catch (error: any) {
       // Only clear auth on 401 (unauthorized), not on network errors
       if (error?.response?.status === 401) {
+        // Check if we have cached auth - if so, the session might have expired
+        // Otherwise, user is truly not authenticated
         context.queryClient.setQueryData(['auth', 'me'], { user: null });
         return { user: null };
       }
-      // For other errors (network, etc.), return cached auth if available
+      // For other errors (network, etc.), try to use cached auth
       // This prevents logout on page reload if there's a temporary network issue
-      if (cachedAuth) {
+      const cachedAuth = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
+      if (cachedAuth?.user) {
+        // Return cached auth if available
         return cachedAuth;
       }
+      // No cached auth and request failed - user not authenticated
+      context.queryClient.setQueryData(['auth', 'me'], { user: null });
       return { user: null };
     }
   },

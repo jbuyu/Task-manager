@@ -28,6 +28,15 @@ apiClient.interceptors.request.use(
       config.headers['X-CSRFToken'] = csrftoken;
     }
 
+    // Debug: Log if sessionid cookie exists
+    const sessionid = document.cookie
+      .split('; ')
+      .find((row) => row.startsWith('sessionid='));
+    
+    if (!sessionid && config.url?.includes('/auth/me')) {
+      console.warn('⚠️ No sessionid cookie found when calling /auth/me');
+    }
+
     return config;
   },
   (error) => {

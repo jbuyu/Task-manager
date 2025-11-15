@@ -69,6 +69,19 @@ export const logout = async (): Promise<LogoutResponse> => {
  * Returns 401 if not authenticated
  */
 export const authMe = async (): Promise<AuthMeResponse> => {
-  const response = await apiClient.get<AuthMeResponse>('/auth/me/');
-  return response.data;
+  try {
+    const response = await apiClient.get<AuthMeResponse>('/auth/me/');
+    return response.data;
+  } catch (error: any) {
+    // Log error for debugging
+    if (error?.response?.status === 401) {
+      console.warn('⚠️ /auth/me returned 401 - session may have expired or cookie not sent');
+      // Check if cookie exists
+      const hasSessionCookie = document.cookie.includes('sessionid=');
+      if (hasSessionCookie) {
+        console.warn('⚠️ Session cookie exists but request returned 401 - cookie may not be forwarded by proxy');
+      }
+    }
+    throw error;
+  }
 };
