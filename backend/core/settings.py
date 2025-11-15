@@ -175,6 +175,8 @@ SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
 SESSION_COOKIE_SAMESITE = 'Lax'  # Prevents CSRF while allowing same-site requests
 SESSION_COOKIE_AGE = 86400  # 24 hours
+SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request to extend expiry
+SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after browser closes
 
 # CSRF configuration
 CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read CSRF token
