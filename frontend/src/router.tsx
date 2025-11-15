@@ -4,6 +4,7 @@ import { authMe } from './api/auth';
 import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
 import { TasksPage } from './pages/TasksPage';
+import { UsersPage } from './pages/UsersPage';
 
 // Root route with loader that fetches auth status
 const rootRoute = createRootRoute({
@@ -73,8 +74,24 @@ const tasksRoute = createRoute({
   },
 });
 
+// Users route - require Admin role
+const usersRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/users',
+  component: UsersPage,
+  beforeLoad: ({ context, location }) => {
+    const authData = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
+    if (!authData?.user) {
+      throw redirect({ to: '/login', search: { redirect: location.href } });
+    }
+    if (authData.user.role !== 'Admin') {
+      throw redirect({ to: '/dashboard' });
+    }
+  },
+});
+
 // Create route tree
-const routeTree = rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, tasksRoute]);
+const routeTree = rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, tasksRoute, usersRoute]);
 
 // Create router
 export const router = createRouter({
