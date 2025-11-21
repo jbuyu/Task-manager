@@ -40,3 +40,12 @@ class UserReadSerializer(serializers.ModelSerializer):
         fields = ['id', 'username', 'email', 'role', 'is_active']
         read_only_fields = ['id', 'username', 'email', 'role', 'is_active']
 
+
+class UserChoiceSerializer(serializers.ModelSerializer):
+    """Lightweight serializer for user choices."""
+    
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'role', 'is_active']
+        read_only_fields = fields
+

@@ -36,3 +36,11 @@ export interface TaskListParams {
   search?: string;
   ordering?: string;
 }
+
+export interface PaginatedResponse<T> {
+  count: number;
+  current_page: number;
+  total_pages: number;
+  page_size: number;
+  results: T[];
+}

@@ -6,7 +6,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from django.contrib.auth import get_user_model
 from .models import Task
 from .serializers import TaskSerializer, TaskReadSerializer
-from users.permissions import IsAdmin, IsManagerOrAdmin, IsAssigneeOrAdmin
+from users.permissions import IsAdmin, IsManagerOrAdmin, IsAssigneeOrManagerOrAdmin
 
 User = get_user_model()
 
@@ -39,7 +39,7 @@ class TaskViewSet(viewsets.ModelViewSet):
         if self.action == 'create':
             permission_classes = [IsAuthenticated, IsManagerOrAdmin]
         elif self.action in ['update', 'partial_update']:
-            permission_classes = [IsAuthenticated, IsAssigneeOrAdmin]
+            permission_classes = [IsAuthenticated, IsAssigneeOrManagerOrAdmin]
         elif self.action == 'destroy':
             permission_classes = [IsAuthenticated, IsAdmin]
         else:

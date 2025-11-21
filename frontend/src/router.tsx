@@ -5,6 +5,9 @@ import { LoginPage } from './pages/LoginPage';
 import { Dashboard } from './pages/Dashboard';
 import { TasksPage } from './pages/TasksPage';
 import { UsersPage } from './pages/UsersPage';
+import { TaskDetailPage } from './pages/TaskDetailPage';
+import { ProfilePage } from './pages/ProfilePage';
+import { redirectIfAuthenticated, requireAdmin, requireAuthentication } from './routerGuards';
 
 // Root route with loader that fetches auth status
 const rootRoute = createRootRoute({
@@ -55,10 +58,7 @@ const loginRoute = createRoute({
   path: '/login',
   component: LoginPage,
   beforeLoad: ({ context, location }) => {
-    const authData = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
-    if (authData?.user) {
-      throw redirect({ to: '/dashboard', search: location.search });
-    }
+    redirectIfAuthenticated({ queryClient: context.queryClient, location });
   },
 });
 
@@ -68,10 +68,7 @@ const dashboardRoute = createRoute({
   path: '/dashboard',
   component: Dashboard,
   beforeLoad: ({ context, location }) => {
-    const authData = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
-    if (!authData?.user) {
-      throw redirect({ to: '/login', search: { redirect: location.href } });
-    }
+    requireAuthentication({ queryClient: context.queryClient, location });
   },
 });
 
@@ -81,10 +78,27 @@ const tasksRoute = createRoute({
   path: '/tasks',
   component: TasksPage,
   beforeLoad: ({ context, location }) => {
-    const authData = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
-    if (!authData?.user) {
-      throw redirect({ to: '/login', search: { redirect: location.href } });
-    }
+    requireAuthentication({ queryClient: context.queryClient, location });
+  },
+});
+
+// Task detail route - require authentication
+const taskDetailRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tasks/$taskId',
+  component: TaskDetailPage,
+  beforeLoad: ({ context, location }) => {
+    requireAuthentication({ queryClient: context.queryClient, location });
+  },
+});
+
+// Profile route - require authentication
+const profileRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/profile',
+  component: ProfilePage,
+  beforeLoad: ({ context, location }) => {
+    requireAuthentication({ queryClient: context.queryClient, location });
   },
 });
 
@@ -94,18 +108,20 @@ const usersRoute = createRoute({
   path: '/users',
   component: UsersPage,
   beforeLoad: ({ context, location }) => {
-    const authData = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
-    if (!authData?.user) {
-      throw redirect({ to: '/login', search: { redirect: location.href } });
-    }
-    if (authData.user.role !== 'Admin') {
-      throw redirect({ to: '/dashboard' });
-    }
+    requireAdmin({ queryClient: context.queryClient, location });
   },
 });
 
 // Create route tree
-const routeTree = rootRoute.addChildren([indexRoute, loginRoute, dashboardRoute, tasksRoute, usersRoute]);
+const routeTree = rootRoute.addChildren([
+  indexRoute,
+  loginRoute,
+  dashboardRoute,
+  tasksRoute,
+  taskDetailRoute,
+  profileRoute,
+  usersRoute,
+]);
 
 // Create router
 export const router = createRouter({

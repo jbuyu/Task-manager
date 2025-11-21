@@ -18,6 +18,8 @@ export function UsersPage() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const pageSize = 10;
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
 
@@ -34,10 +36,16 @@ export function UsersPage() {
     return null;
   }
 
-  const { data: users = [], isLoading } = useQuery({
-    queryKey: ['users', searchQuery],
-    queryFn: getUsers,
+  const { data: usersResponse, isLoading } = useQuery({
+    queryKey: ['users', page, searchQuery],
+    queryFn: () =>
+      getUsers({
+        page,
+        page_size: pageSize,
+        search: searchQuery || undefined,
+      }),
     enabled: user?.role === 'Admin', // Only fetch if Admin
+    keepPreviousData: true,
   });
 
   const createMutation = useMutation({
@@ -64,6 +72,11 @@ export function UsersPage() {
     },
   });
 
+  const handleSearchChange = (value: string) => {
+    setSearchQuery(value);
+    setPage(1);
+  };
+
   const handleCreate = (data: UserCreateRequest) => {
     createMutation.mutate(data);
   };
@@ -80,10 +93,9 @@ export function UsersPage() {
     }
   };
 
-  const filteredUsers = users.filter((u) =>
-    u.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const users = usersResponse?.results ?? [];
+  const totalUsers = usersResponse?.count ?? 0;
+  const totalPages = usersResponse?.total_pages ?? 1;
 
   const getRoleBadgeColor = (role: User['role']) => {
     switch (role) {
@@ -143,7 +155,7 @@ export function UsersPage() {
                 <Input
                   placeholder="Search users..."
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="pl-10"
                 />
               </div>
@@ -154,71 +166,97 @@ export function UsersPage() {
             <CardHeader>
               <CardTitle>Users</CardTitle>
               <CardDescription>
-                {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''} found
+                {totalUsers} user{totalUsers !== 1 ? 's' : ''} found
               </CardDescription>
             </CardHeader>
             <CardContent>
               {isLoading ? (
                 <div className="text-center py-8 text-muted-foreground">Loading users...</div>
-              ) : filteredUsers.length === 0 ? (
+              ) : users.length === 0 ? (
                 <div className="text-center py-8 text-muted-foreground">
                   No users found. Create your first user to get started!
                 </div>
               ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Username</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Role</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead className="text-right">Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredUsers.map((u) => (
-                      <TableRow key={u.id}>
-                        <TableCell className="font-medium">{u.username}</TableCell>
-                        <TableCell>{u.email || '—'}</TableCell>
-                        <TableCell>
-                          <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(u.role)}`}>
-                            {getRoleIcon(u.role)}
-                            {u.role}
-                          </span>
-                        </TableCell>
-                        <TableCell>
-                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                            u.is_active 
-                              ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
-                              : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
-                          }`}>
-                            {u.is_active ? 'Active' : 'Inactive'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => setEditingUser(u)}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDelete(u.id)}
-                              disabled={deleteMutation.isPending || u.id === user.id}
-                              title={u.id === user.id ? "Cannot delete your own account" : "Delete user"}
-                            >
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </div>
-                        </TableCell>
+                <div className="space-y-4">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Username</TableHead>
+                        <TableHead>Email</TableHead>
+                        <TableHead>Role</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {users.map((u) => (
+                        <TableRow key={u.id}>
+                          <TableCell className="font-medium">{u.username}</TableCell>
+                          <TableCell>{u.email || '—'}</TableCell>
+                          <TableCell>
+                            <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full ${getRoleBadgeColor(u.role)}`}>
+                              {getRoleIcon(u.role)}
+                              {u.role}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                              u.is_active 
+                                ? 'bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300' 
+                                : 'bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300'
+                            }`}>
+                              {u.is_active ? 'Active' : 'Inactive'}
+                            </span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingUser(u)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDelete(u.id)}
+                                disabled={deleteMutation.isPending || u.id === user.id}
+                                title={u.id === user.id ? "Cannot delete your own account" : "Delete user"}
+                              >
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <p className="text-sm text-muted-foreground">
+                      Page {page} of {totalPages} • Showing up to {pageSize} users per page
+                    </p>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page === 1 || isLoading}
+                        onClick={() => setPage((prev) => Math.max(prev - 1, 1))}
+                      >
+                        Previous
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={page >= totalPages || isLoading}
+                        onClick={() => setPage((prev) => Math.min(prev + 1, totalPages))}
+                      >
+                        Next
+                      </Button>
+                    </div>
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>

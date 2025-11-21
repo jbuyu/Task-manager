@@ -87,8 +87,8 @@ class UserAPIViewSetTests(TestCase):
         self.client.force_authenticate(user=self.admin_user)
         response = self.client.get('/api/users/')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        # Response can be a list or paginated dict
-        self.assertTrue(isinstance(response.data, list) or 'results' in response.data or 'count' in response.data)
+        self.assertIn('results', response.data)
+        self.assertIn('count', response.data)
     
     def test_create_user_requires_admin(self):
         """Test that only Admin can create users"""
@@ -160,6 +160,23 @@ class UserAPIViewSetTests(TestCase):
         
         # Verify user was deleted
         self.assertFalse(User.objects.filter(id=user_to_delete.id).exists())
+    
+    def test_user_list_is_paginated(self):
+        """Ensure user list endpoint returns paginated response"""
+        for i in range(15):
+            User.objects.create_user(
+                username=f'user{i}',
+                password='testpass123',
+                role=User.Role.MEMBER,
+            )
+        
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get('/api/users/?page=2&page_size=5')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['page_size'], 5)
+        self.assertEqual(response.data['current_page'], 2)
+        self.assertIn('results', response.data)
+        self.assertTrue(len(response.data['results']) <= 5)
 
 
 class AuthMeViewTests(TestCase):
@@ -190,3 +207,43 @@ class AuthMeViewTests(TestCase):
         self.assertEqual(response.data['user']['email'], 'test@example.com')
         self.assertEqual(response.data['user']['role'], 'Manager')
         self.assertEqual(response.data['user']['id'], self.user.id)
+
+
+class UserChoicesActionTests(TestCase):
+    """Tests for the /api/users/choices/ endpoint."""
+    
+    def setUp(self):
+        self.client = APIClient()
+        self.admin_user = User.objects.create_user(
+            username='admin',
+            password='testpass123',
+            role=User.Role.ADMIN,
+        )
+        self.manager_user = User.objects.create_user(
+            username='manager',
+            password='testpass123',
+            role=User.Role.MANAGER,
+        )
+        self.member_user = User.objects.create_user(
+            username='member',
+            password='testpass123',
+            role=User.Role.MEMBER,
+        )
+    
+    def test_choices_requires_manager_or_admin(self):
+        """Only Manager/Admin should access choices."""
+        response = self.client.get('/api/users/choices/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+        self.client.force_authenticate(user=self.member_user)
+        response = self.client.get('/api/users/choices/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        
+        self.client.force_authenticate(user=self.manager_user)
+        response = self.client.get('/api/users/choices/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(all('username' in user for user in response.data))
+        
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get('/api/users/choices/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)

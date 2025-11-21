@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { Header } from '../components/Header';
 import { getTasks, createTask, updateTask, deleteTask } from '../api/tasks';
 import type { Task, TaskCreateRequest } from '../api/types';
@@ -13,10 +14,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { TaskForm } from '../components/TaskForm';
 import { Plus, Search, Edit2, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getUserChoices } from '../api/users';
+import type { UserChoice } from '../api/users';
 
 export function TasksPage() {
   const queryClient = useQueryClient();
   const [statusFilter, setStatusFilter] = useState<string>('');
+  const [assigneeFilter, setAssigneeFilter] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -28,12 +32,29 @@ export function TasksPage() {
 
   const user = authData?.user;
 
+  const { data: userChoices = [] } = useQuery<UserChoice[]>({
+    queryKey: ['user-choices'],
+    queryFn: getUserChoices,
+    enabled: user?.role === 'Admin' || user?.role === 'Manager',
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const assigneeParam =
+    assigneeFilter === 'mine'
+      ? user?.id
+      : assigneeFilter
+        ? Number(assigneeFilter)
+        : undefined;
+
   const { data: tasks = [], isLoading } = useQuery({
-    queryKey: ['tasks', statusFilter, searchQuery],
-    queryFn: () => getTasks({
-      status: statusFilter as any,
-      search: searchQuery || undefined,
-    }),
+    queryKey: ['tasks', statusFilter, searchQuery, assigneeFilter],
+    queryFn: () =>
+      getTasks({
+        status: statusFilter as Task['status'] | undefined,
+        search: searchQuery || undefined,
+        assignee: assigneeParam,
+      }),
+    enabled: !!user,
   });
 
   const createMutation = useMutation({
@@ -60,7 +81,8 @@ export function TasksPage() {
   });
 
   const canCreate = user?.role === 'Admin' || user?.role === 'Manager';
-  const canEdit = (task: Task) => user?.role === 'Admin' || task.assignee === user?.id;
+  const canEdit = (task: Task) =>
+    user?.role === 'Admin' || user?.role === 'Manager' || task.assignee === user?.id;
   const canDelete = user?.role === 'Admin';
 
   const handleCreate = (data: TaskCreateRequest) => {
@@ -96,6 +118,10 @@ export function TasksPage() {
     return null;
   }
 
+  const assigneeOptions =
+    user.role === 'Admin' || user.role === 'Manager' ? userChoices : [];
+  const totalTasks = tasks.length;
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -120,10 +146,10 @@ export function TasksPage() {
           <Card>
             <CardHeader>
               <CardTitle>Filters</CardTitle>
-              <CardDescription>Filter tasks by status or search</CardDescription>
+              <CardDescription>Filter tasks by status, assignee, or search</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-4">
+              <div className="flex flex-col gap-4 md:flex-row">
                 <div className="flex-1">
                   <div className="relative">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -135,15 +161,36 @@ export function TasksPage() {
                     />
                   </div>
                 </div>
-                <Select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="">All Statuses</option>
-                  <option value="Todo">Todo</option>
-                  <option value="In Progress">In Progress</option>
-                  <option value="Done">Done</option>
-                </Select>
+                <div className="flex flex-1 gap-4">
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="Todo">Todo</option>
+                    <option value="In Progress">In Progress</option>
+                    <option value="Done">Done</option>
+                  </Select>
+                  <Select
+                    value={assigneeFilter}
+                    onChange={(e) => setAssigneeFilter(e.target.value)}
+                    disabled={
+                      user.role !== 'Member' && assigneeOptions.length === 0
+                    }
+                  >
+                    <option value="">
+                      {user.role === 'Member' ? 'Assigned to me' : 'All Assignees'}
+                    </option>
+                    {user.role !== 'Member' && (
+                      <option value="mine">My Tasks</option>
+                    )}
+                    {assigneeOptions.map((assignee) => (
+                      <option key={assignee.id} value={assignee.id}>
+                        {assignee.username} ({assignee.role})
+                      </option>
+                    ))}
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -152,7 +199,7 @@ export function TasksPage() {
             <CardHeader>
               <CardTitle>Task List</CardTitle>
               <CardDescription>
-                {tasks.length} task{tasks.length !== 1 ? 's' : ''} found
+                {totalTasks} task{totalTasks !== 1 ? 's' : ''} found
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -177,7 +224,15 @@ export function TasksPage() {
                   <TableBody>
                     {tasks.map((task) => (
                       <TableRow key={task.id}>
-                        <TableCell className="font-medium">{task.title}</TableCell>
+                        <TableCell className="font-medium">
+                          <Link
+                            to="/tasks/$taskId"
+                            params={{ taskId: task.id.toString() }}
+                            className="text-primary hover:underline"
+                          >
+                            {task.title}
+                          </Link>
+                        </TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusBadgeColor(task.status)}`}>
                             {task.status}

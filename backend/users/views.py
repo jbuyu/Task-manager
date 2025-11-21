@@ -1,10 +1,11 @@
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import get_user_model
-from .serializers import UserSerializer, UserReadSerializer
-from .permissions import IsAdmin
+from .serializers import UserSerializer, UserReadSerializer, UserChoiceSerializer
+from .permissions import IsAdmin, IsManagerOrAdmin
+from .pagination import UserPagination
 
 User = get_user_model()
 
@@ -15,7 +16,12 @@ class UserViewSet(viewsets.ModelViewSet):
     Only Admin users can access these endpoints.
     """
     queryset = User.objects.all()
+    pagination_class = UserPagination
     permission_classes = [IsAuthenticated, IsAdmin]
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ['username', 'email']
+    ordering_fields = ['username', 'role', 'is_active']
+    ordering = ['username']
     
     def get_serializer_class(self):
         """Use read serializer for GET, write serializer for POST/PUT"""
@@ -55,3 +61,18 @@ class UserViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         instance.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    @action(
+        detail=False,
+        methods=['get'],
+        permission_classes=[IsAuthenticated, IsManagerOrAdmin],
+        url_path='choices',
+    )
+    def choices(self, request):
+        """
+        Return a lightweight list of active users that can be assigned tasks.
+        Accessible to Managers and Admins.
+        """
+        queryset = User.objects.filter(is_active=True).order_by('username')
+        serializer = UserChoiceSerializer(queryset, many=True)
+        return Response(serializer.data)

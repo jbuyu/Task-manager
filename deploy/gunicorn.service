@@ -1,0 +1,20 @@
+[Unit]
+Description=Task Management Backend (Gunicorn)
+After=network.target
+
+[Service]
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/task-app/backend
+Environment="DJANGO_SETTINGS_MODULE=core.settings"
+EnvironmentFile=/opt/task-app/backend/.env
+ExecStart=/opt/task-app/backend/.venv/bin/gunicorn core.wsgi:application \
+          --bind 127.0.0.1:8001 \
+          --workers 3 \
+          --timeout 120
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { Task, TaskCreateRequest, TaskUpdateRequest } from '../api/types';
-import { getUsers } from '../api/users';
+import { getUserChoices } from '../api/users';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -26,10 +26,11 @@ export function TaskForm({ task, onSubmit, onCancel, isLoading, userRole }: Task
   );
   const [assignee, setAssignee] = useState<string>(task?.assignee?.toString() || '');
 
-  const { data: users = [] } = useQuery({
-    queryKey: ['users'],
-    queryFn: getUsers,
+  const { data: userChoices = [] } = useQuery({
+    queryKey: ['user-choices'],
+    queryFn: getUserChoices,
     enabled: userRole === 'Admin' || userRole === 'Manager', // Only fetch for Admin/Manager
+    staleTime: 5 * 60 * 1000,
   });
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -89,7 +90,7 @@ export function TaskForm({ task, onSubmit, onCancel, isLoading, userRole }: Task
             onChange={(e) => setAssignee(e.target.value)}
           >
             <option value="">Unassigned</option>
-            {users.map((user) => (
+            {userChoices.map((user) => (
               <option key={user.id} value={user.id}>
                 {user.username} ({user.role})
               </option>

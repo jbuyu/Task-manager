@@ -23,18 +23,19 @@ class IsManagerOrAdmin(permissions.BasePermission):
         )
 
 
-class IsAssigneeOrAdmin(permissions.BasePermission):
+class IsAssigneeOrManagerOrAdmin(permissions.BasePermission):
     """
-    Permission to check if user is the assignee of an object or has Admin role.
-    The object must have an 'assignee' attribute.
+    Permission to check if the user can act on an object they own/assign
+    or if they have elevated privileges (Manager/Admin).
     """
     
     def has_object_permission(self, request, view, obj):
-        # Admin can access any object
-        if request.user.role == 'Admin':
+        if not request.user.is_authenticated:
+            return False
+        
+        if request.user.role in ['Admin', 'Manager']:
             return True
         
-        # Check if user is the assignee
         if hasattr(obj, 'assignee'):
             return obj.assignee == request.user
         

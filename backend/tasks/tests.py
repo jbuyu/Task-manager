@@ -171,8 +171,8 @@ class TaskAPIViewSetTests(TestCase):
         response = self.client.post('/api/tasks/', task_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
     
-    def test_update_task_requires_assignee_or_admin(self):
-        """Test that only assignee or Admin can update tasks"""
+    def test_update_task_requires_assignee_manager_or_admin(self):
+        """Test that only assignee, Manager, or Admin can update tasks"""
         update_data = {
             'status': Task.Status.IN_PROGRESS,
         }
@@ -184,6 +184,12 @@ class TaskAPIViewSetTests(TestCase):
         
         # Assignee can update
         self.client.force_authenticate(user=self.member_user)
+        response = self.client.patch(f'/api/tasks/{self.task.id}/', update_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data['status'], Task.Status.IN_PROGRESS)
+        
+        # Manager can update
+        self.client.force_authenticate(user=self.manager_user)
         response = self.client.patch(f'/api/tasks/{self.task.id}/', update_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.data['status'], Task.Status.IN_PROGRESS)

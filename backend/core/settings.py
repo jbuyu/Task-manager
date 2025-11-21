@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+import dj_database_url
 
 # Load environment variables from .env file
 load_dotenv()
@@ -30,7 +31,12 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-y3^l*mj5165+xojjwdef(#fo78
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+default_hosts = ['localhost', '127.0.0.1', '.railway.app']
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv('ALLOWED_HOSTS', ','.join(default_hosts)).split(',')
+    if host.strip()
+]
 
 
 # Application definition
@@ -86,7 +92,17 @@ WSGI_APPLICATION = 'core.wsgi.application'
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
 
 # Support PostgreSQL via environment variables, fallback to SQLite for local dev
-if os.getenv('DB_NAME'):
+DATABASE_URL = os.getenv('DATABASE_URL')
+
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.parse(
+            DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=os.getenv('DB_SSL', 'True') == 'True',
+        )
+    }
+elif os.getenv('DB_NAME'):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
@@ -160,11 +176,16 @@ REST_FRAMEWORK = {
     ],
 }
 
-# CORS configuration for local development
-# In production, configure specific origins
-CORS_ALLOWED_ORIGINS = [
-    'http://localhost:5173',  # Vite default port
+# CORS configuration - can be overridden via env var
+default_cors = [
+    'http://localhost:5173',
     'http://127.0.0.1:5173',
+    'https://*.railway.app',
+]
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CORS_ALLOWED_ORIGINS', ','.join(default_cors)).split(',')
+    if origin.strip()
 ]
 
 CORS_ALLOW_CREDENTIALS = True  # Required for session cookies
@@ -185,4 +206,16 @@ SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after browser closes
 CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read CSRF token
 CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
 CSRF_COOKIE_SAMESITE = 'Lax'  # Match session cookie SameSite
-CSRF_TRUSTED_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173']
+default_csrf_origins = [
+    'http://localhost:5173',
+    'http://127.0.0.1:5173',
+    'https://*.railway.app',
+]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv('CSRF_TRUSTED_ORIGINS', ','.join(default_csrf_origins)).split(',')
+    if origin.strip()
+]
+
+# Static files root for collectstatic
+STATIC_ROOT = BASE_DIR / 'staticfiles'
