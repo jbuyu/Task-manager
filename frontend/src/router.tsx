@@ -12,30 +12,29 @@ import { redirectIfAuthenticated, requireAdmin, requireAuthentication } from './
 // Root route with loader that fetches auth status
 const rootRoute = createRootRoute({
   loader: async ({ context }) => {
-    // Fetch current user on root load
-    try {
-      const data = await authMe();
-      context.queryClient.setQueryData(['auth', 'me'], data);
-      return data;
-    } catch (error: any) {
-      // Only clear auth on 401 (unauthorized), not on network errors
-      if (error?.response?.status === 401) {
-        // Check if we have cached auth - if so, the session might have expired
-        // Otherwise, user is truly not authenticated
+    // Check if we have cached auth data first
+    const cachedAuth = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
+    
+    // Only fetch if we don't have cached data or if it's stale
+    if (!cachedAuth) {
+      try {
+        const data = await authMe();
+        context.queryClient.setQueryData(['auth', 'me'], data);
+        return data;
+      } catch (error: any) {
+        // Only clear auth on 401 (unauthorized), not on network errors
+        if (error?.response?.status === 401) {
+          context.queryClient.setQueryData(['auth', 'me'], { user: null });
+          return { user: null };
+        }
+        // For other errors (network, etc.), return null auth
         context.queryClient.setQueryData(['auth', 'me'], { user: null });
         return { user: null };
       }
-      // For other errors (network, etc.), try to use cached auth
-      // This prevents logout on page reload if there's a temporary network issue
-      const cachedAuth = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
-      if (cachedAuth?.user) {
-        // Return cached auth if available
-        return cachedAuth;
-      }
-      // No cached auth and request failed - user not authenticated
-      context.queryClient.setQueryData(['auth', 'me'], { user: null });
-      return { user: null };
     }
+    
+    // Return cached auth data
+    return cachedAuth;
   },
 });
 

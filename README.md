@@ -58,6 +58,16 @@ The frontend will run on `http://localhost:5173`.
 
 ## Deployment
 
+### Render Deployment (All-in-One)
+
+Deploy everything (PostgreSQL, Django backend, React frontend) to Render with a single click using the Blueprint configuration.
+
+See [`RENDER_DEPLOYMENT.md`](./RENDER_DEPLOYMENT.md) for complete step-by-step instructions.
+
+**Quick Start:** Connect your GitHub repo to Render and it will automatically detect `render.yaml` to provision and deploy everything.
+
+### VPS Deployment
+
 The repository includes everything required to deploy on a VPS with Nginx + Gunicorn:
 
 - `deploy/nginx.conf` – sample reverse proxy/static hosting config
@@ -74,9 +84,18 @@ High-level steps:
 5. Install the provided `gunicorn.service` and `nginx.conf`, then run Certbot to enable HTTPS.
 6. Restart Nginx/Gunicorn; the SPA will be served via Nginx with `/api` proxied to Gunicorn.
 
+### Railway (Backend) + Vercel (Frontend) Deployment
+
+**Recommended approach:** Deploy the Django backend to Railway and the React frontend to Vercel.
+
+- **Backend on Railway:** Perfect for Django with PostgreSQL, automatic deployments, and great developer experience
+- **Frontend on Vercel:** Excellent for React/Vite apps with automatic deployments, CDN, and great performance
+
+See [`RAILWAY_VERCEL_DEPLOYMENT.md`](./RAILWAY_VERCEL_DEPLOYMENT.md) for a complete step-by-step deployment guide.
+
 ### Railway Deployment
 
-[Railway](https://railway.com/) can host multi-service apps (web + db) directly from your GitHub repo with containerized builds, instant Postgres provisioning, and built-in logs/metrics, so it’s a good fit for staging or production.
+[Railway](https://railway.com/) can host multi-service apps (web + db) directly from your GitHub repo with containerized builds, instant Postgres provisioning, and built-in logs/metrics, so it's a good fit for staging or production.
 
 #### 1. Prep the repo
 
@@ -200,4 +219,5 @@ See the spec for the full roadmap. Next iterations will include:
 - Permission classes
 - Frontend pages and routing
 - Login/logout flows
+
 # Task-manager

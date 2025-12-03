@@ -5,4 +5,5 @@ python-dotenv>=1.0.0
 django-cors-headers>=4.0.0
 django-filter>=24.0
 dj-database-url>=2.2.0
+gunicorn>=21.2.0
 
