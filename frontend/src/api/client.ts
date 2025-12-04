@@ -3,7 +3,18 @@ import axios from 'axios';
 // Get API URL from environment or default to local development
 // In dev, use relative path to leverage Vite proxy (same origin = cookies work)
 // In production, use full URL
-const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:8000/api');
+let API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:8000/api');
+
+// Normalize API URL: ensure it ends with /api for production URLs
+// This handles cases where VITE_API_URL is set without /api
+if (API_URL.startsWith('http://') || API_URL.startsWith('https://')) {
+  // Remove trailing slash if present
+  API_URL = API_URL.replace(/\/$/, '');
+  // Add /api if not already present
+  if (!API_URL.endsWith('/api')) {
+    API_URL = `${API_URL}/api`;
+  }
+}
 
 // Debug: Log API URL in production
 if (import.meta.env.PROD) {
