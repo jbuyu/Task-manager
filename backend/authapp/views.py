@@ -5,6 +5,7 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from django.contrib.auth import login, logout
 from django.middleware.csrf import get_token
+from django.conf import settings
 from .serializers import UserAuthSerializer, LoginSerializer
 
 logger = logging.getLogger(__name__)
@@ -16,19 +17,26 @@ def csrf_token_view(request):
     """
     Get CSRF token endpoint.
     This ensures CSRF cookie is set properly for cross-origin requests.
+    Django's get_token() will automatically set the cookie, but we ensure it's set
+    with the correct attributes from settings.
     """
     token = get_token(request)
     response = Response({'csrfToken': token}, status=status.HTTP_200_OK)
-    # Explicitly set CSRF cookie to ensure it's sent with correct attributes
+    
+    # Explicitly set CSRF cookie using Django's settings
+    # This ensures the cookie has the correct SameSite and Secure attributes
     response.set_cookie(
         'csrftoken',
         token,
-        max_age=3600 * 24,  # 24 hours
-        samesite='None',
-        secure=True,
-        httponly=False  # Frontend needs to read it
+        max_age=settings.CSRF_COOKIE_AGE if hasattr(settings, 'CSRF_COOKIE_AGE') else 3600 * 24,
+        domain=settings.CSRF_COOKIE_DOMAIN if hasattr(settings, 'CSRF_COOKIE_DOMAIN') else None,
+        path=settings.CSRF_COOKIE_PATH if hasattr(settings, 'CSRF_COOKIE_PATH') else '/',
+        secure=settings.CSRF_COOKIE_SECURE,
+        httponly=settings.CSRF_COOKIE_HTTPONLY,
+        samesite=settings.CSRF_COOKIE_SAMESITE
     )
-    logger.info(f"CSRF token issued - Origin: {request.META.get('HTTP_ORIGIN')}")
+    logger.info(f"CSRF token issued - Origin: {request.META.get('HTTP_ORIGIN')}, "
+                f"Secure: {settings.CSRF_COOKIE_SECURE}, SameSite: {settings.CSRF_COOKIE_SAMESITE}")
     return response
 
 

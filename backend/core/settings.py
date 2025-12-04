@@ -207,6 +207,8 @@ CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read CSRF token
 # For cross-origin, use Secure=True and SameSite=None (required when SameSite=None)
 CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
 CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
+CSRF_COOKIE_AGE = 3600 * 24  # 24 hours
+CSRF_COOKIE_PATH = '/'  # Cookie path
 default_csrf_origins = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
