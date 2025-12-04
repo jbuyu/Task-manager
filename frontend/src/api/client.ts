@@ -48,6 +48,9 @@ apiClient.interceptors.request.use(
 
     if (csrftoken) {
       config.headers['X-CSRFToken'] = csrftoken;
+    } else {
+      console.warn(`⚠️ CSRF token not found in cookies for ${config.method?.toUpperCase()} ${config.url}`);
+      console.warn('Available cookies:', document.cookie);
     }
 
     // Debug: Log if sessionid cookie exists

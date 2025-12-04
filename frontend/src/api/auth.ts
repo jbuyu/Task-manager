@@ -60,6 +60,9 @@ export const login = async (credentials: LoginRequest): Promise<LoginResponse> =
  * Destroys the session
  */
 export const logout = async (): Promise<LogoutResponse> => {
+  // Ensure CSRF token is available before logout
+  await getCsrfToken();
+  
   const response = await apiClient.post<LogoutResponse>('/auth/logout/');
   return response.data;
 };
