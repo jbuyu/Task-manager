@@ -5,6 +5,11 @@ import axios from 'axios';
 // In production, use full URL
 const API_URL = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '/api' : 'http://localhost:8000/api');
 
+// Debug: Log API URL in production
+if (import.meta.env.PROD) {
+  console.log('🔧 API_URL:', API_URL);
+}
+
 // Create axios instance with credentials to send cookies
 export const apiClient = axios.create({
   baseURL: API_URL,
@@ -18,6 +23,12 @@ export const apiClient = axios.create({
 // Django sends CSRF token in cookie, we need to extract and send it in header
 apiClient.interceptors.request.use(
   (config) => {
+    // Debug: Log full URL being called
+    const fullUrl = config.baseURL && config.url 
+      ? `${config.baseURL}${config.url}` 
+      : config.url;
+    console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${fullUrl}`);
+    
     // Get CSRF token from cookie
     const csrftoken = document.cookie
       .split('; ')
@@ -48,6 +59,16 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
+    // Debug: Log error details
+    if (error.response) {
+      console.error(`❌ API Error: ${error.response.status} ${error.config?.method?.toUpperCase()} ${error.config?.url}`);
+      console.error('Response:', error.response.data);
+      console.error('Full URL:', error.config?.baseURL + error.config?.url);
+    } else if (error.request) {
+      console.error('❌ API Request failed - no response received');
+      console.error('Request URL:', error.config?.baseURL + error.config?.url);
+    }
+    
     if (error.response?.status === 401) {
       // Handle unauthenticated users (e.g., redirect to login)
       // This will be handled by router guards
