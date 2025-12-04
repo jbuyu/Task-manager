@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import type { Task, TaskCreateRequest, TaskUpdateRequest } from '../api/types';
 import { getUserChoices } from '../api/users';
@@ -7,7 +7,6 @@ import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Textarea } from './ui/textarea';
 import { Select } from './ui/select';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 
 interface TaskFormProps {
   task?: Task;

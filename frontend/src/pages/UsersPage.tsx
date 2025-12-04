@@ -45,7 +45,7 @@ export function UsersPage() {
         search: searchQuery || undefined,
       }),
     enabled: user?.role === 'Admin', // Only fetch if Admin
-    keepPreviousData: true,
+    placeholderData: (previousData) => previousData,
   });
 
   const createMutation = useMutation({
@@ -77,8 +77,8 @@ export function UsersPage() {
     setPage(1);
   };
 
-  const handleCreate = (data: UserCreateRequest) => {
-    createMutation.mutate(data);
+  const handleCreate = (data: UserCreateRequest | UserUpdateRequest) => {
+    createMutation.mutate(data as UserCreateRequest);
   };
 
   const handleUpdate = (data: UserUpdateRequest) => {
@@ -189,7 +189,7 @@ export function UsersPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {users.map((u) => (
+                      {users.map((u: User) => (
                         <TableRow key={u.id}>
                           <TableCell className="font-medium">{u.username}</TableCell>
                           <TableCell>{u.email || '—'}</TableCell>

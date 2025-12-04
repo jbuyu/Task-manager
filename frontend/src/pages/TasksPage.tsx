@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Header } from '../components/Header';
 import { getTasks, createTask, updateTask, deleteTask } from '../api/tasks';
-import type { Task, TaskCreateRequest } from '../api/types';
+import type { Task, TaskCreateRequest, TaskUpdateRequest } from '../api/types';
 import { authMe } from '../api/auth';
 import { Button } from '../components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
@@ -85,13 +85,13 @@ export function TasksPage() {
     user?.role === 'Admin' || user?.role === 'Manager' || task.assignee === user?.id;
   const canDelete = user?.role === 'Admin';
 
-  const handleCreate = (data: TaskCreateRequest) => {
-    createMutation.mutate(data);
+  const handleCreate = (data: TaskCreateRequest | TaskUpdateRequest) => {
+    createMutation.mutate(data as TaskCreateRequest);
   };
 
-  const handleUpdate = (data: TaskCreateRequest) => {
+  const handleUpdate = (data: TaskCreateRequest | TaskUpdateRequest) => {
     if (editingTask) {
-      updateMutation.mutate({ id: editingTask.id, data });
+      updateMutation.mutate({ id: editingTask.id, data: data as TaskCreateRequest });
     }
   };
 

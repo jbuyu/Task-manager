@@ -11,24 +11,25 @@ import { redirectIfAuthenticated, requireAdmin, requireAuthentication } from './
 
 // Root route with loader that fetches auth status
 const rootRoute = createRootRoute({
-  loader: async ({ context }) => {
+  loader: async ({ context }: any) => {
+    const queryClient = context.queryClient as QueryClient;
     // Check if we have cached auth data first
-    const cachedAuth = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
+    const cachedAuth = queryClient?.getQueryData(['auth', 'me']) as { user: any } | undefined;
     
     // Only fetch if we don't have cached data or if it's stale
     if (!cachedAuth) {
-      try {
-        const data = await authMe();
-        context.queryClient.setQueryData(['auth', 'me'], data);
+    try {
+      const data = await authMe();
+        context.queryClient?.setQueryData(['auth', 'me'], data);
         return data;
       } catch (error: any) {
         // Only clear auth on 401 (unauthorized), not on network errors
         if (error?.response?.status === 401) {
-          context.queryClient.setQueryData(['auth', 'me'], { user: null });
+          context.queryClient?.setQueryData(['auth', 'me'], { user: null });
           return { user: null };
         }
         // For other errors (network, etc.), return null auth
-        context.queryClient.setQueryData(['auth', 'me'], { user: null });
+        context.queryClient?.setQueryData(['auth', 'me'], { user: null });
         return { user: null };
       }
     }
@@ -42,8 +43,8 @@ const rootRoute = createRootRoute({
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  beforeLoad: ({ context, location }) => {
-    const authData = context.queryClient.getQueryData<{ user: any }>(['auth', 'me']);
+  beforeLoad: ({ context, location }: any) => {
+    const authData = (context.queryClient as QueryClient)?.getQueryData<{ user: any }>(['auth', 'me']);
     if (authData?.user) {
       throw redirect({ to: '/dashboard', search: location.search });
     }
@@ -56,7 +57,7 @@ const loginRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/login',
   component: LoginPage,
-  beforeLoad: ({ context, location }) => {
+  beforeLoad: ({ context, location }: any) => {
     redirectIfAuthenticated({ queryClient: context.queryClient, location });
   },
 });
@@ -66,7 +67,7 @@ const dashboardRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/dashboard',
   component: Dashboard,
-  beforeLoad: ({ context, location }) => {
+  beforeLoad: ({ context, location }: any) => {
     requireAuthentication({ queryClient: context.queryClient, location });
   },
 });
@@ -76,7 +77,7 @@ const tasksRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/tasks',
   component: TasksPage,
-  beforeLoad: ({ context, location }) => {
+  beforeLoad: ({ context, location }: any) => {
     requireAuthentication({ queryClient: context.queryClient, location });
   },
 });
@@ -86,7 +87,7 @@ const taskDetailRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/tasks/$taskId',
   component: TaskDetailPage,
-  beforeLoad: ({ context, location }) => {
+  beforeLoad: ({ context, location }: any) => {
     requireAuthentication({ queryClient: context.queryClient, location });
   },
 });
@@ -96,7 +97,7 @@ const profileRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/profile',
   component: ProfilePage,
-  beforeLoad: ({ context, location }) => {
+  beforeLoad: ({ context, location }: any) => {
     requireAuthentication({ queryClient: context.queryClient, location });
   },
 });
@@ -106,7 +107,7 @@ const usersRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/users',
   component: UsersPage,
-  beforeLoad: ({ context, location }) => {
+  beforeLoad: ({ context, location }: any) => {
     requireAdmin({ queryClient: context.queryClient, location });
   },
 });

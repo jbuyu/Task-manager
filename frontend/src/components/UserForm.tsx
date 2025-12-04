@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import type { User } from '../api/types';
 import type { UserCreateRequest, UserUpdateRequest } from '../api/users';
 import { Button } from './ui/button';
