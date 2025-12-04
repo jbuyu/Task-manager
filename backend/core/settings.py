@@ -194,18 +194,19 @@ CORS_EXPOSE_HEADERS = ['Set-Cookie']  # Expose Set-Cookie header to frontend
 # Session configuration
 # Security: session cookies should be HttpOnly and Secure in production
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SECURE = False  # Set to True in production with HTTPS
-# Using Vite proxy, so frontend and backend appear on same origin
-# This allows SameSite='Lax' to work properly
-SESSION_COOKIE_SAMESITE = 'Lax'  # Works with Vite proxy (same origin)
+# For cross-origin (Vercel frontend to Railway backend), use Secure=True and SameSite=None
+# For same-origin (local dev with Vite proxy), use Secure=False and SameSite=Lax
+SESSION_COOKIE_SECURE = os.getenv('SESSION_COOKIE_SECURE', 'False') == 'True'
+SESSION_COOKIE_SAMESITE = os.getenv('SESSION_COOKIE_SAMESITE', 'Lax')
 SESSION_COOKIE_AGE = 86400  # 24 hours
 SESSION_SAVE_EVERY_REQUEST = True  # Save session on every request to extend expiry
 SESSION_EXPIRE_AT_BROWSER_CLOSE = False  # Keep session after browser closes
 
 # CSRF configuration
 CSRF_COOKIE_HTTPONLY = False  # Frontend needs to read CSRF token
-CSRF_COOKIE_SECURE = False  # Set to True in production with HTTPS
-CSRF_COOKIE_SAMESITE = 'Lax'  # Match session cookie SameSite
+# For cross-origin, use Secure=True and SameSite=None (required when SameSite=None)
+CSRF_COOKIE_SECURE = os.getenv('CSRF_COOKIE_SECURE', 'False') == 'True'
+CSRF_COOKIE_SAMESITE = os.getenv('CSRF_COOKIE_SAMESITE', 'Lax')
 default_csrf_origins = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
