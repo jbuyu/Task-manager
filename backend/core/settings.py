@@ -31,7 +31,7 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'django-insecure-y3^l*mj5165+xojjwdef(#fo78
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'True') == 'True'
 
-default_hosts = ['localhost', '127.0.0.1', '.railway.app']
+default_hosts = ['localhost', '127.0.0.1', '.railway.app', '.up.railway.app']
 ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv('ALLOWED_HOSTS', ','.join(default_hosts)).split(',')
