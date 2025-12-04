@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { apiClient, setCsrfTokenCache } from './client';
 import type { User } from './types';
 
 export type { User };
@@ -24,11 +24,19 @@ export interface LogoutResponse {
 /**
  * Get CSRF token from Django
  * Uses dedicated CSRF token endpoint to ensure cookie is set properly
+ * Also stores token in memory cache as fallback for cross-origin cookie issues
  */
 export const getCsrfToken = async (): Promise<string | null> => {
   try {
     // Use dedicated CSRF token endpoint
     const response = await apiClient.get<{ csrfToken: string }>('/auth/csrf-token/');
+    
+    const tokenFromResponse = response.data.csrfToken;
+    
+    // Store token in memory cache (for cross-origin cookie fallback)
+    if (tokenFromResponse) {
+      setCsrfTokenCache(tokenFromResponse);
+    }
     
     // Wait a bit for cookie to be set (browser needs time to process Set-Cookie header)
     await new Promise(resolve => setTimeout(resolve, 100));
@@ -41,13 +49,14 @@ export const getCsrfToken = async (): Promise<string | null> => {
     
     if (!csrftoken) {
       console.warn('⚠️ CSRF token not found in cookies after calling /auth/csrf-token/');
-      console.warn('Response token:', response.data.csrfToken);
+      console.warn('Response token:', tokenFromResponse);
       console.warn('Available cookies:', document.cookie);
+      console.warn('📦 Using token from response body (cookie may not be set due to cross-origin restrictions)');
       // Fallback to token from response body
-      return response.data.csrfToken || null;
+      return tokenFromResponse || null;
     }
     
-    console.log('✅ CSRF token retrieved successfully');
+    console.log('✅ CSRF token retrieved successfully from cookie');
     return csrftoken;
   } catch (error: any) {
     console.error('❌ Error getting CSRF token:', error);

@@ -1,5 +1,14 @@
 import axios from 'axios';
 
+// In-memory CSRF token storage (fallback when cookie isn't available)
+let csrfTokenCache: string | null = null;
+
+// Export function to set CSRF token cache
+export const setCsrfTokenCache = (token: string | null) => {
+  csrfTokenCache = token;
+  console.log('💾 CSRF token cached:', token ? 'stored' : 'cleared');
+};
+
 // Get API URL from environment or default to local development
 // In dev, use relative path to leverage Vite proxy (same origin = cookies work)
 // In production, use full URL
@@ -40,17 +49,25 @@ apiClient.interceptors.request.use(
       : config.url;
     console.log(`🌐 API Request: ${config.method?.toUpperCase()} ${fullUrl}`);
     
-    // Get CSRF token from cookie
-    const csrftoken = document.cookie
+    // Get CSRF token from cookie first, then fallback to cache
+    let csrftoken = document.cookie
       .split('; ')
       .find((row) => row.startsWith('csrftoken='))
       ?.split('=')[1];
+    
+    // Fallback to cached token if cookie not available (cross-origin cookie issues)
+    if (!csrftoken && csrfTokenCache) {
+      csrftoken = csrfTokenCache;
+      console.log('📦 Using cached CSRF token');
+    }
 
     if (csrftoken) {
       config.headers['X-CSRFToken'] = csrftoken;
+      console.log(`✅ CSRF token added to ${config.method?.toUpperCase()} ${config.url}`);
     } else {
-      console.warn(`⚠️ CSRF token not found in cookies for ${config.method?.toUpperCase()} ${config.url}`);
+      console.warn(`⚠️ CSRF token not found for ${config.method?.toUpperCase()} ${config.url}`);
       console.warn('Available cookies:', document.cookie);
+      console.warn('Cached token:', csrfTokenCache ? 'exists' : 'none');
     }
 
     // Debug: Log if sessionid cookie exists
