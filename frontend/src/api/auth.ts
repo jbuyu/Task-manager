@@ -23,20 +23,20 @@ export interface LogoutResponse {
 
 /**
  * Get CSRF token from Django
- * Django sets CSRF token in a cookie, we need to ensure it's available
+ * Uses dedicated CSRF token endpoint to ensure cookie is set properly
  */
 export const getCsrfToken = async (): Promise<string | null> => {
   try {
-    // Trigger a GET request to get CSRF cookie set by Django
-    await apiClient.get('/auth/me/');
+    // Use dedicated CSRF token endpoint
+    const response = await apiClient.get<{ csrfToken: string }>('/auth/csrf-token/');
     
-    // Extract CSRF token from cookie
+    // Extract CSRF token from cookie (Django also sets it in cookie)
     const csrftoken = document.cookie
       .split('; ')
       .find((row) => row.startsWith('csrftoken='))
       ?.split('=')[1];
     
-    return csrftoken || null;
+    return csrftoken || response.data.csrfToken || null;
   } catch (error) {
     console.error('Error getting CSRF token:', error);
     return null;

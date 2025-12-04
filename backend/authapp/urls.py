@@ -4,6 +4,7 @@ from . import views
 app_name = 'authapp'
 
 urlpatterns = [
+    path('csrf-token/', views.csrf_token_view, name='csrf-token'),
     path('login/', views.login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
     path('me/', views.me, name='me'),
